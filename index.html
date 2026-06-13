@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Library of Unplayed Games</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --bg2: #ede8de;
+    --panel: #faf7f2;
+    --border: #d6cfc2;
+    --border-strong: #b8ae9e;
+    --accent: #5c4a1e;
+    --accent-hover: #3d3010;
+    --accent2: #7a5c2e;
+    --teal: #2a7a6e;
+    --teal-light: #e0f0ee;
+    --text: #2c2416;
+    --text2: #4a3f2f;
+    --muted: #8a7d68;
+    --muted2: #b0a492;
+    --light-sq: #f0e6cc;
+    --dark-sq: #b08850;
+    --highlight: rgba(92,74,30,0.18);
+    --last-move: rgba(42,122,110,0.2);
+    --shadow: 0 1px 4px rgba(44,36,22,0.10), 0 2px 12px rgba(44,36,22,0.06);
+    --shadow-card: 0 1px 3px rgba(44,36,22,0.08), 0 4px 16px rgba(44,36,22,0.05);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(180,160,100,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(140,110,60,0.08) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 28px 24px 8px;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  header h1 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-style: italic;
+  }
+
+  .counter {
+    font-size: 0.85rem;
+    color: var(--teal);
+    margin-top: 6px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    padding: 12px 24px 32px;
+    max-width: 1200px;
+    width: 100%;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+
+  .board-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    border: 2px solid var(--border-strong);
+    border-radius: 4px;
+    width: min(58vw, 580px);
+    height: min(58vw, 580px);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .sq {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 3.5vw, 3rem);
+    position: relative;
+    transition: background 0.08s;
+    user-select: none;
+  }
+
+  .sq.light { background: var(--light-sq); }
+  .sq.dark  { background: var(--dark-sq); }
+  .sq.selected { background: rgba(92,74,30,0.28) !important; }
+  .sq.last-move { background: var(--last-move) !important; }
+
+  .sq.possible::after {
+    content: '';
+    position: absolute;
+    width: 32%;
+    height: 32%;
+    border-radius: 50%;
+    background: rgba(92,74,30,0.38);
+    pointer-events: none;
+  }
+  .sq.possible.has-piece::after {
+    width: 88%;
+    height: 88%;
+    border-radius: 3px;
+    background: transparent;
+    border: 3px solid rgba(92,74,30,0.5);
+  }
+
+  .coord-row {
+    display: flex;
+    width: min(58vw, 580px);
+  }
+
+  .coord {
+    flex: 1;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted2);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .coord-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: min(58vw, 580px);
+    margin-right: 6px;
+  }
+
+  .coord-col span {
+    font-size: 0.75rem;
+    color: var(--muted2);
+    width: 14px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* ── Right panel: two-column grid of cards ── */
+  .side-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    gap: 14px;
+    width: min(90vw, 420px);
+    align-content: start;
+    flex-shrink: 0;
+  }
+
+  /* Cards that should span full width */
+  .card.full { grid-column: 1 / -1; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card h3 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 7px;
+  }
+
+  .eval-bar-wrap {
+    height: 7px;
+    background: var(--bg2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+
+  #eval-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+    width: 50%;
+    border-radius: 3px;
+  }
+
+  #eval-text {
+    font-size: 1.5rem;
+    color: var(--text);
+    text-align: center;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-weight: 600;
+  }
+
+  #eval-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 3px;
+  }
+
+  .depth-info {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    min-height: 22px;
+  }
+
+  #move-list {
+    max-height: 140px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 2;
+    word-break: break-all;
+  }
+
+  #move-list::-webkit-scrollbar { width: 4px; }
+  #move-list::-webkit-scrollbar-track { background: var(--bg2); border-radius: 2px; }
+  #move-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  #move-list span {
+    color: var(--text2);
+    cursor: pointer;
+    padding: 1px 3px;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+
+  #move-list span:hover { background: var(--bg2); color: var(--accent); }
+
+  #move-list span.current {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  button {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.8rem;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+
+  button:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  button.active {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+  }
+
+  #fen-display {
+    font-size: 0.68rem;
+    color: var(--muted);
+    word-break: break-all;
+    line-height: 1.6;
+    cursor: pointer;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg2);
+    transition: border-color 0.15s;
+    font-family: 'Courier New', monospace;
+  }
+
+  #fen-display:hover { border-color: var(--border-strong); color: var(--text2); }
+
+  .discoveries {
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .discoveries::-webkit-scrollbar { width: 4px; }
+  .discoveries::-webkit-scrollbar-track { background: var(--bg2); border-radius: 2px; }
+  .discoveries::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .discovery-item {
+    border-bottom: 1px solid var(--border);
+    padding: 9px 0;
+    font-size: 0.78rem;
+  }
+
+  .discovery-item:last-child { border-bottom: none; }
+
+  .discovery-item .disc-name {
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .discovery-item .disc-meta {
+    color: var(--muted2);
+    font-size: 0.7rem;
+  }
+
+  .discovery-item .disc-note {
+    color: var(--text2);
+    font-style: italic;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+
+  .discovery-item .disc-load {
+    color: var(--teal);
+    cursor: pointer;
+    font-size: 0.72rem;
+    margin-top: 4px;
+    display: inline-block;
+    font-weight: 500;
+  }
+
+  .discovery-item .disc-load:hover { text-decoration: underline; }
+
+  .pin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pin-form input, .pin-form textarea {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .pin-form input::placeholder, .pin-form textarea::placeholder { color: var(--muted2); }
+
+  .pin-form input:focus, .pin-form textarea:focus {
+    border-color: var(--accent);
+    background: var(--panel);
+  }
+
+  .pin-form textarea { resize: none; height: 54px; }
+
+  .tags-row { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .tag {
+    display: inline-block;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+
+  .tag:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .status-bar {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--teal);
+    min-height: 22px;
+    padding: 4px 8px;
+    font-weight: 500;
+  }
+
+  .novelty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.72rem;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .known-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg2);
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 3px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Navbar ── */
+  nav {
+    width: 100%;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 1px 6px rgba(44,36,22,0.07);
+  }
+
+  .nav-brand {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text2);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+
+  .nav-btn:hover {
+    background: var(--bg2);
+    border-color: var(--border);
+    color: var(--accent);
+  }
+
+  .nav-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* ── Fact ticker ── */
+  .fact-bar {
+    width: 100%;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 42px;
+  }
+
+  .fact-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .fact-text {
+    color: var(--text2);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    transition: opacity 0.4s;
+    cursor: pointer;
+    text-align: center;
+    max-width: 800px;
+  }
+
+  .fact-text.fading { opacity: 0; }
+
+  /* ── Help overlay ── */
+  #help-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,36,22,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #help-overlay.visible { display: flex; }
+
+  #help-box {
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 640px;
+    width: 100%;
+    box-shadow: 0 12px 48px rgba(44,36,22,0.2);
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  #help-box h2 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .help-section {
+    margin-bottom: 22px;
+  }
+
+  .help-section h4 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .help-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+    font-size: 0.85rem;
+  }
+
+  .help-icon {
+    font-size: 1.1rem;
+    width: 28px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .help-row strong { color: var(--text); }
+  .help-row span { color: var(--text2); line-height: 1.5; }
+
+  .help-close {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .help-close:hover { background: var(--accent-hover); }
+
+  /* ── Facts overlay ── */
+  #facts-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,36,22,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #facts-overlay.visible { display: flex; }
+
+  #facts-box {
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 580px;
+    width: 100%;
+    box-shadow: 0 12px 48px rgba(44,36,22,0.2);
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  #facts-box h2 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  #facts-box .sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .fact-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .fact-card .fact-num {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .fact-card p {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 0.95rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* ── Material counter ── */
+  .material-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: min(58vw, 580px);
+    padding: 5px 2px;
+    font-size: 1rem;
+    min-height: 28px;
+  }
+
+  .material-side {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    min-height: 22px;
+  }
+
+  .material-side .cap-piece { font-size: 1.1rem; line-height: 1; }
+
+  .material-advantage {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--teal);
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+
+  /* ── Computer opponent toggle ── */
+  .computer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text2);
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle {
+    width: 36px;
+    height: 20px;
+    background: var(--border-strong);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: var(--teal); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle.on::after { left: 19px; }
+
+  .thinking-indicator {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    min-height: 18px;
+    margin-top: 6px;
+    font-family: 'Crimson Pro', Georgia, serif;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .thinking { animation: pulse 1s infinite; color: var(--teal); }
+
+  /* ── FEN import ── */
+  .fen-import-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .fen-import-row input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    padding: 7px 9px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  .fen-import-row input:focus { border-color: var(--accent); background: var(--panel); }
+  .fen-import-row input::placeholder { color: var(--muted2); }
+
+  .fen-err {
+    font-size: 0.7rem;
+    color: #c0392b;
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  /* ── Promotion picker ── */
+  #promo-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,36,22,0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #promo-overlay.visible { display: flex; }
+
+  #promo-box {
+    background: var(--panel);
+    border: 2px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 8px 40px rgba(44,36,22,0.25);
+    text-align: center;
+  }
+
+  #promo-box p {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 1.1rem;
+    color: var(--text2);
+    margin-bottom: 18px;
+    font-style: italic;
+  }
+
+  #promo-choices {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .promo-btn {
+    width: 64px;
+    height: 64px;
+    font-size: 2.8rem;
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .promo-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(92,74,30,0.3);
+  }
+
+  footer {
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 1.05rem;
+    color: var(--muted);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-style: italic;
+    line-height: 2;
+  }
+
+  @media (max-width: 900px) {
+    .main { flex-wrap: wrap; padding: 8px 12px 24px; }
+    #board { width: min(90vw, 480px); height: min(90vw, 480px); }
+    .coord-row { width: min(90vw, 480px); }
+    .coord-col { height: min(90vw, 480px); }
+    .side-panel { width: 100%; max-width: 580px; grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 520px) {
+    .side-panel { grid-template-columns: 1fr; }
+    .card.full { grid-column: 1; }
+    header { padding: 16px 12px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">♟ The Library</div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="openHelp()">How to Use</button>
+    <button class="nav-btn" onclick="openFacts()">Chess Facts</button>
+    <button class="nav-btn" onclick="randomMove()">Random Move</button>
+    <button class="nav-btn" onclick="resetGame()">Reset</button>
+  </div>
+</nav>
+
+<div class="fact-bar">
+  <span class="fact-label">Did you know</span>
+  <span class="fact-text" id="fact-text" onclick="nextFact()" title="Click for next fact">Loading...</span>
+</div>
+
+<!-- Help overlay -->
+<div id="help-overlay" onclick="closeHelp(event)">
+  <div id="help-box">
+    <h2>How to use this</h2>
+
+    <div class="help-section">
+      <h4>Playing & Exploring</h4>
+      <div class="help-row"><span class="help-icon">♟</span><span><strong>Click a piece</strong> to select it. Legal moves appear as dots. Click a dot to move.</span></div>
+      <div class="help-row"><span class="help-icon">⟵</span><span><strong>Back button</strong> undoes the last move. <strong>Start</strong> jumps to the beginning. Click any move in the history to jump there.</span></div>
+      <div class="help-row"><span class="help-icon">🎲</span><span><strong>Random Move</strong> plays a legal move at random — great for diving deep into unknown territory fast.</span></div>
+      <div class="help-row"><span class="help-icon">♙→♛</span><span>When a <strong>pawn promotes</strong>, a picker appears — choose Queen, Rook, Bishop, or Knight.</span></div>
+    </div>
+
+    <div class="help-section">
+      <h4>Evaluation</h4>
+      <div class="help-row"><span class="help-icon">⚖</span><span>The <strong>bar and score</strong> show material + position balance. Positive = white advantage, negative = black. It's a simple estimate, not an engine.</span></div>
+    </div>
+
+    <div class="help-section">
+      <h4>Territory</h4>
+      <div class="help-row"><span class="help-icon">🗺</span><span><strong>Opening territory</strong> (moves 1–5): well-trodden ground, millions of games here.</span></div>
+      <div class="help-row"><span class="help-icon">🌲</span><span><strong>Still in theory</strong> (moves 5–10): known to opening specialists, rare to most players.</span></div>
+      <div class="help-row"><span class="help-icon">🔭</span><span><strong>Possibly uncharted</strong> (moves 10–20): you may be the first person to reach this exact position.</span></div>
+      <div class="help-row"><span class="help-icon">✦</span><span><strong>Almost certainly uncharted</strong> (move 20+): this position has almost certainly never been played by a human.</span></div>
+    </div>
+
+    <div class="help-section">
+      <h4>Drop a Pin</h4>
+      <div class="help-row"><span class="help-icon">📍</span><span>Found something interesting? <strong>Name it and pin it</strong>. Your atlas saves to your browser and persists across sessions. Use tags to categorise what you find.</span></div>
+    </div>
+
+    <div class="help-section">
+      <h4>Quick Explore</h4>
+      <div class="help-row"><span class="help-icon">⚡</span><span>Jump to famous opening positions: <strong>King's Indian, Sicilian</strong> (sharp openings), <strong>Endgame</strong> (king + pawn structure), <strong>Chaos</strong> (a position with castling rights and active pieces).</span></div>
+    </div>
+
+    <div class="help-section">
+      <h4>FEN</h4>
+      <div class="help-row"><span class="help-icon">📋</span><span><strong>FEN</strong> is the standard notation for any chess position. Click it to copy — paste into Lichess, Chess.com, or any engine to analyse further.</span></div>
+    </div>
+
+    <button class="help-close" onclick="closeHelpBtn()">Got it</button>
+  </div>
+</div>
+
+<!-- Facts overlay -->
+<div id="facts-overlay" onclick="closeFactsOverlay(event)">
+  <div id="facts-box">
+    <h2>Chess Facts</h2>
+    <div class="sub">Things worth knowing about the game.</div>
+    <div id="facts-list"></div>
+    <button class="help-close" id="facts-close-btn" onclick="closeFactsBtn()">Close</button>
+  </div>
+</div>
+
+<header>
+  <h1>The Library of Unplayed Games</h1>
+  <p>10<sup>120</sup> possible games. Humanity has played ~10<sup>9</sup>.<br>
+  You are going somewhere no one has ever been.</p>
+  <div class="counter" id="depth-counter">depth 0 — starting position</div>
+</header>
+
+<div class="main">
+  <div class="board-wrap">
+    <!-- Black's captured pieces (shown above board) -->
+    <div class="material-bar" id="material-top"></div>
+    <div style="display:flex; align-items:flex-start;">
+      <div class="coord-col" id="rank-coords"></div>
+      <div>
+        <div id="board"></div>
+        <div class="coord-row" id="file-coords"></div>
+      </div>
+    </div>
+    <!-- White's captured pieces (shown below board) -->
+    <div class="material-bar" id="material-bottom"></div>
+    <div class="status-bar" id="status-bar">Click a piece to begin exploring</div>
+  </div>
+
+  <div class="side-panel">
+
+    <!-- Row 1: Eval (left) + Territory (right) -->
+    <div class="card">
+      <h3>Evaluation</h3>
+      <div class="eval-bar-wrap"><div id="eval-bar"></div></div>
+      <div id="eval-text">0.00</div>
+      <div id="eval-label">equal</div>
+    </div>
+
+    <div class="card">
+      <h3>Territory</h3>
+      <div class="depth-info" id="novelty-info" style="margin-top:0;text-align:left;min-height:28px;"></div>
+      <div style="margin-top:6px;font-size:0.78rem;color:var(--muted);" id="territory-label">Opening territory</div>
+    </div>
+
+    <!-- Row 2: Move history full width -->
+    <div class="card full">
+      <h3>Move History</h3>
+      <div id="move-list">Starting position</div>
+      <div class="btn-row">
+        <button onclick="goToStart()">&#8810; Start</button>
+        <button onclick="undoMove()">&#8249; Back</button>
+        <button onclick="randomMove()">Random &#8250;</button>
+        <button onclick="resetGame()">Reset</button>
+      </div>
+    </div>
+
+    <!-- Row 3: Quick Explore (left) + FEN (right) -->
+    <div class="card">
+      <h3>Explore</h3>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:0;">
+        <button onclick="loadPreset('kings_indian')">King's Indian</button>
+        <button onclick="loadPreset('sicilian')">Sicilian</button>
+        <button onclick="loadPreset('endgame')">Endgame</button>
+        <button onclick="loadPreset('chaos')">Chaos</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>FEN</h3>
+      <div id="fen-display" onclick="copyFen()" title="Click to copy FEN"></div>
+      <div style="font-size:0.72rem;color:var(--muted2);margin-top:4px;">↑ Click to copy</div>
+      <div class="fen-import-row">
+        <input type="text" id="fen-import" placeholder="Paste FEN to import…" spellcheck="false">
+        <button onclick="importFen()">Load</button>
+      </div>
+      <div class="fen-err" id="fen-err"></div>
+    </div>
+
+    <!-- Row 3b: Computer opponent -->
+    <div class="card">
+      <h3>Computer</h3>
+      <div class="toggle-wrap" onclick="toggleComputer()">
+        <div class="toggle" id="computer-toggle"></div>
+        <span id="computer-label">Play vs computer</span>
+      </div>
+      <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);">Computer plays Black</div>
+      <div class="thinking-indicator" id="thinking-indicator"></div>
+    </div>
+
+    <!-- Row 4: Pin form full width -->
+    <div class="card full">
+      <h3>Drop a Pin</h3>
+      <div class="pin-form">
+        <input type="text" id="pin-name" placeholder="Name this position..." maxlength="40">
+        <textarea id="pin-note" placeholder="What do you see here?"></textarea>
+        <div class="tags-row">
+          <span class="tag" onclick="appendTag('eerie beauty')">eerie beauty</span>
+          <span class="tag" onclick="appendTag('perfect symmetry')">symmetry</span>
+          <span class="tag" onclick="appendTag('maximum tension')">tension</span>
+          <span class="tag" onclick="appendTag('secretly drawn')">secretly drawn</span>
+          <span class="tag" onclick="appendTag('looks lost')">looks lost</span>
+        </div>
+        <div id="pin-feedback" style="font-size:0.75rem;min-height:16px;color:var(--teal);"></div>
+        <button onclick="pinPosition()" style="width:100%;">Pin This Position</button>
+      </div>
+    </div>
+
+    <!-- Row 5: Atlas full width -->
+    <div class="card full">
+      <h3>Your Atlas <span id="discovery-count" style="color:var(--muted);font-size:0.78rem;font-weight:400;">(0 pins)</span></h3>
+      <div class="discoveries" id="discoveries-list">
+        <div style="color:var(--muted);font-size:0.82rem;font-style:italic;font-family:'Crimson Pro',Georgia,serif;">No pins yet. Explore and mark what you find.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Every position you reach beyond move 15 has likely never been seen by human eyes.<br>
+  You are an explorer. The map is yours to make.
+</footer>
+
+<div id="promo-overlay">
+  <div id="promo-box">
+    <p>Choose a piece to promote to</p>
+    <div id="promo-choices"></div>
+  </div>
+</div>
+
+<script>
+// ─── Chess Engine ────────────────────────────────────────────────────────────
+
+const PIECES = {
+  wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
+  bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟'
+};
+
+const INIT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+let state = {
+  board: [],       // 8x8, null or {color:'w'|'b', type:'K'|'Q'|'R'|'B'|'N'|'P'}
+  turn: 'w',
+  castling: {wK:true, wQ:true, bK:true, bQ:true},
+  enPassant: null,
+  halfMove: 0,
+  fullMove: 1,
+  selected: null,
+  legalMoves: [],
+  history: [],     // array of {fen, san, from, to}
+  historyIdx: -1,
+  lastFrom: null,
+  lastTo: null,
+};
+
+let discoveries = JSON.parse(localStorage.getItem('chess_library_pins') || '[]');
+let knownFens = new Set(JSON.parse(localStorage.getItem('chess_library_known') || '[]'));
+
+// Add opening positions to known set
+const KNOWN_OPENINGS = [
+  INIT_FEN,
+  'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
+  'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
+  'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1',
+];
+KNOWN_OPENINGS.forEach(f => knownFens.add(f.split(' ').slice(0,4).join(' ')));
+
+function parseFen(fen) {
+  const parts = fen.trim().split(' ');
+  const rows = parts[0].split('/');
+  const board = [];
+  for (let r = 0; r < 8; r++) {
+    const row = [];
+    for (const ch of rows[r]) {
+      if (/\d/.test(ch)) {
+        for (let i = 0; i < parseInt(ch); i++) row.push(null);
+      } else {
+        const color = ch === ch.toUpperCase() ? 'w' : 'b';
+        row.push({ color, type: ch.toUpperCase() });
+      }
+    }
+    board.push(row);
+  }
+  const castling = {
+    wK: parts[2].includes('K'), wQ: parts[2].includes('Q'),
+    bK: parts[2].includes('k'), bQ: parts[2].includes('q')
+  };
+  let enPassant = null;
+  if (parts[3] !== '-') {
+    const f = parts[3].charCodeAt(0) - 97;
+    const r = 8 - parseInt(parts[3][1]);
+    enPassant = [r, f];
+  }
+  return {
+    board, turn: parts[1],
+    castling, enPassant,
+    halfMove: parseInt(parts[4]||0),
+    fullMove: parseInt(parts[5]||1)
+  };
+}
+
+function boardToFen(board, turn, castling, enPassant, halfMove, fullMove) {
+  let fen = '';
+  for (let r = 0; r < 8; r++) {
+    let empty = 0;
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (!p) { empty++; continue; }
+      if (empty) { fen += empty; empty = 0; }
+      const ch = p.type;
+      fen += p.color === 'w' ? ch : ch.toLowerCase();
+    }
+    if (empty) fen += empty;
+    if (r < 7) fen += '/';
+  }
+  fen += ' ' + turn;
+  let cast = '';
+  if (castling.wK) cast += 'K';
+  if (castling.wQ) cast += 'Q';
+  if (castling.bK) cast += 'k';
+  if (castling.bQ) cast += 'q';
+  fen += ' ' + (cast || '-');
+  fen += enPassant ? ' ' + String.fromCharCode(97 + enPassant[1]) + (8 - enPassant[0]) : ' -';
+  fen += ' ' + halfMove + ' ' + fullMove;
+  return fen;
+}
+
+function copyBoard(b) { return b.map(r => r.map(p => p ? {...p} : null)); }
+
+function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+function isOpp(board, r, c, color) {
+  return board[r][c] && board[r][c].color !== color;
+}
+
+function isEmpty(board, r, c) { return !board[r][c]; }
+
+function getRawMoves(board, r, c, turn, enPassant, castling) {
+  const p = board[r][c];
+  if (!p || p.color !== turn) return [];
+  const moves = [];
+  const add = (tr, tc, special) => {
+    if (!inBounds(tr, tc)) return;
+    if (board[tr][tc] && board[tr][tc].color === p.color) return;
+    moves.push({ from:[r,c], to:[tr,tc], special: special||null });
+  };
+  const slide = (dr, dc) => {
+    let nr = r+dr, nc = c+dc;
+    while (inBounds(nr, nc)) {
+      if (board[nr][nc]) {
+        if (board[nr][nc].color !== p.color) moves.push({from:[r,c],to:[nr,nc]});
+        break;
+      }
+      moves.push({from:[r,c],to:[nr,nc]});
+      nr+=dr; nc+=dc;
+    }
+  };
+
+  if (p.type === 'P') {
+    const dir = p.color === 'w' ? -1 : 1;
+    const startRow = p.color === 'w' ? 6 : 1;
+    if (inBounds(r+dir,c) && isEmpty(board,r+dir,c)) {
+      moves.push({from:[r,c],to:[r+dir,c], special: r+dir===0||r+dir===7?'promo':null});
+      if (r === startRow && isEmpty(board,r+2*dir,c))
+        moves.push({from:[r,c],to:[r+2*dir,c], special:'double'});
+    }
+    for (const dc of [-1,1]) {
+      if (!inBounds(r+dir,c+dc)) continue;
+      if (isOpp(board,r+dir,c+dc,p.color))
+        moves.push({from:[r,c],to:[r+dir,c+dc], special: r+dir===0||r+dir===7?'promo':null});
+      if (enPassant && enPassant[0]===r+dir && enPassant[1]===c+dc)
+        moves.push({from:[r,c],to:[r+dir,c+dc], special:'enpassant'});
+    }
+  } else if (p.type === 'N') {
+    for (const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])
+      add(r+dr,c+dc);
+  } else if (p.type === 'B') {
+    for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) slide(dr,dc);
+  } else if (p.type === 'R') {
+    for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc);
+  } else if (p.type === 'Q') {
+    for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]) slide(dr,dc);
+  } else if (p.type === 'K') {
+    for (const [dr,dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) add(r+dr,c+dc);
+    // Castling — only add if king not currently in check (checked in getLegalMoves by simulating)
+    if (p.color === 'w' && r === 7 && c === 4) {
+      if (castling.wK && !board[7][5] && !board[7][6] && board[7][7]?.type==='R' && board[7][7]?.color==='w')
+        moves.push({from:[r,c],to:[7,6],special:'castle-k'});
+      if (castling.wQ && !board[7][3] && !board[7][2] && !board[7][1] && board[7][0]?.type==='R' && board[7][0]?.color==='w')
+        moves.push({from:[r,c],to:[7,2],special:'castle-q'});
+    }
+    if (p.color === 'b' && r === 0 && c === 4) {
+      if (castling.bK && !board[0][5] && !board[0][6] && board[0][7]?.type==='R' && board[0][7]?.color==='b')
+        moves.push({from:[r,c],to:[0,6],special:'castle-k'});
+      if (castling.bQ && !board[0][3] && !board[0][2] && !board[0][1] && board[0][0]?.type==='R' && board[0][0]?.color==='b')
+        moves.push({from:[r,c],to:[0,2],special:'castle-q'});
+    }
+  }
+  return moves;
+}
+
+function isInCheck(board, color) {
+  let kr = -1, kc = -1;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c]?.color === color && board[r][c]?.type === 'K') { kr=r; kc=c; }
+  const opp = color === 'w' ? 'b' : 'w';
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c]?.color === opp) {
+        const moves = getRawMoves(board, r, c, opp, null, {wK:false,wQ:false,bK:false,bQ:false});
+        if (moves.some(m => m.to[0]===kr && m.to[1]===kc)) return true;
+      }
+  return false;
+}
+
+function applyMove(board, move, castling, enPassant) {
+  const nb = copyBoard(board);
+  const [fr,fc] = move.from, [tr,tc] = move.to;
+  const p = nb[fr][fc];
+  let newEP = null;
+  let newCast = {...castling};
+
+  nb[tr][tc] = p;
+  nb[fr][fc] = null;
+
+  if (move.special === 'double') newEP = [fr + (tr - fr) / 2, fc]; // transit square, not destination
+  if (move.special === 'enpassant') nb[fr][tc] = null;
+  if (move.special === 'promo') nb[tr][tc] = {color: p.color, type: move.promoType || 'Q'};
+  if (move.special === 'castle-k') {
+    if (p.color === 'w') { nb[7][5] = nb[7][7]; nb[7][7] = null; }
+    else { nb[0][5] = nb[0][7]; nb[0][7] = null; }
+  }
+  if (move.special === 'castle-q') {
+    if (p.color === 'w') { nb[7][3] = nb[7][0]; nb[7][0] = null; }
+    else { nb[0][3] = nb[0][0]; nb[0][0] = null; }
+  }
+
+  if (p.type === 'K') {
+    if (p.color === 'w') { newCast.wK = false; newCast.wQ = false; }
+    else { newCast.bK = false; newCast.bQ = false; }
+  }
+  if (p.type === 'R') {
+    if (fr===7&&fc===7) newCast.wK = false;
+    if (fr===7&&fc===0) newCast.wQ = false;
+    if (fr===0&&fc===7) newCast.bK = false;
+    if (fr===0&&fc===0) newCast.bQ = false;
+  }
+
+  return { board: nb, enPassant: newEP, castling: newCast };
+}
+
+function getLegalMoves(board, turn, castling, enPassant) {
+  const legal = [];
+  // Can't castle while in check
+  const inCheckNow = isInCheck(board, turn);
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c]?.color === turn) {
+        const raw = getRawMoves(board, r, c, turn, enPassant, castling);
+        for (const m of raw) {
+          // Can't castle while in check
+          if (inCheckNow && (m.special === 'castle-k' || m.special === 'castle-q')) continue;
+          // Can't castle through an attacked square
+          if (m.special === 'castle-k') {
+            const midCol = 5;
+            const midBoard = copyBoard(board);
+            midBoard[r][midCol] = midBoard[r][c]; midBoard[r][c] = null;
+            if (isInCheck(midBoard, turn)) continue;
+          }
+          if (m.special === 'castle-q') {
+            const midCol = 3;
+            const midBoard = copyBoard(board);
+            midBoard[r][midCol] = midBoard[r][c]; midBoard[r][c] = null;
+            if (isInCheck(midBoard, turn)) continue;
+          }
+          const {board: nb} = applyMove(board, m, castling, enPassant);
+          if (!isInCheck(nb, turn)) legal.push(m);
+        }
+      }
+  return legal;
+}
+
+// Simple material + position evaluation
+const PIECE_VAL = {K:0, Q:9, R:5, B:3.25, N:3, P:1};
+const PAWN_TABLE = [
+  [0,0,0,0,0,0,0,0],
+  [5,5,5,5,5,5,5,5],
+  [1,1,2,3,3,2,1,1],
+  [0.5,0.5,1,2.5,2.5,1,0.5,0.5],
+  [0,0,0,2,2,0,0,0],
+  [0.5,-0.5,-1,0,0,-1,-0.5,0.5],
+  [0.5,1,1,-2,-2,1,1,0.5],
+  [0,0,0,0,0,0,0,0]
+];
+const KNIGHT_TABLE = [
+  [-5,-4,-3,-3,-3,-3,-4,-5],
+  [-4,-2,0,0,0,0,-2,-4],
+  [-3,0,1,1.5,1.5,1,0,-3],
+  [-3,0.5,1.5,2,2,1.5,0.5,-3],
+  [-3,0,1.5,2,2,1.5,0,-3],
+  [-3,0.5,1,1.5,1.5,1,0.5,-3],
+  [-4,-2,0,0.5,0.5,0,-2,-4],
+  [-5,-4,-3,-3,-3,-3,-4,-5]
+];
+
+function evaluate(board) {
+  let score = 0;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (!p) continue;
+      let v = PIECE_VAL[p.type];
+      if (p.type === 'P') v += PAWN_TABLE[p.color==='w'?r:7-r][c] * 0.1;
+      if (p.type === 'N') v += KNIGHT_TABLE[p.color==='w'?r:7-r][c] * 0.1;
+      score += p.color === 'w' ? v : -v;
+    }
+  return score;
+}
+
+function moveToSan(board, move, castling, enPassant) {
+  const p = board[move.from[0]][move.from[1]];
+  const files = 'abcdefgh';
+  const ranks = '87654321';
+  const toSq = files[move.to[1]] + ranks[move.to[0]];
+  if (p.type === 'K' && move.special === 'castle-k') return 'O-O';
+  if (p.type === 'K' && move.special === 'castle-q') return 'O-O-O';
+
+  const isCapture = !!board[move.to[0]][move.to[1]] || move.special === 'enpassant';
+
+  if (p.type === 'P') {
+    let san = isCapture ? files[move.from[1]] + 'x' : '';
+    san += toSq;
+    if (move.special === 'promo') san += '=' + (move.promoType || 'Q');
+    return san;
+  }
+
+  // Disambiguation for non-pawn pieces
+  let prefix = p.type;
+  const ambiguous = getLegalMoves(board, p.color, castling, enPassant).filter(m =>
+    m !== move &&
+    board[m.from[0]][m.from[1]]?.type === p.type &&
+    board[m.from[0]][m.from[1]]?.color === p.color &&
+    m.to[0] === move.to[0] && m.to[1] === move.to[1]
+  );
+  if (ambiguous.length) {
+    const sameFile = ambiguous.some(m => m.from[1] === move.from[1]);
+    const sameRank = ambiguous.some(m => m.from[0] === move.from[0]);
+    if (!sameFile) prefix += files[move.from[1]];
+    else if (!sameRank) prefix += ranks[move.from[0]];
+    else prefix += files[move.from[1]] + ranks[move.from[0]];
+  }
+
+  return prefix + (isCapture ? 'x' : '') + toSq;
+}
+
+// ─── State Management ─────────────────────────────────────────────────────────
+
+function loadFen(fen) {
+  const parsed = parseFen(fen);
+  state.board = parsed.board;
+  state.turn = parsed.turn;
+  state.castling = parsed.castling;
+  state.enPassant = parsed.enPassant;
+  state.halfMove = parsed.halfMove;
+  state.fullMove = parsed.fullMove;
+  state.selected = null;
+  state.legalMoves = [];
+  state.history = [{fen, san: null, from: null, to: null}];
+  state.historyIdx = 0;
+  state.lastFrom = null;
+  state.lastTo = null;
+  render();
+}
+
+function makeMove(move) {
+  const san = moveToSan(state.board, move, state.castling, state.enPassant);
+  const {board: nb, enPassant: nep, castling: ncast} = applyMove(state.board, move, state.castling, state.enPassant);
+  const opp = state.turn === 'w' ? 'b' : 'w';
+  const inCheck = isInCheck(nb, opp);
+  const newTurn = opp;
+  const newHalf = (state.board[move.to[0]][move.to[1]] || state.board[move.from[0]][move.from[1]].type === 'P') ? 0 : state.halfMove + 1;
+  const newFull = state.turn === 'b' ? state.fullMove + 1 : state.fullMove;
+
+  state.board = nb;
+  state.turn = newTurn;
+  state.castling = ncast;
+  state.enPassant = nep;
+  state.halfMove = newHalf;
+  state.fullMove = newFull;
+  state.lastFrom = move.from;
+  state.lastTo = move.to;
+
+  // Trim forward history if we branched
+  state.history = state.history.slice(0, state.historyIdx + 1);
+  const fen = boardToFen(state.board, state.turn, state.castling, state.enPassant, state.halfMove, state.fullMove);
+
+  // Determine check/checkmate suffix
+  let suffix = '';
+  if (inCheck) {
+    const oppLegal = getLegalMoves(nb, opp, ncast, nep);
+    suffix = oppLegal.length === 0 ? '#' : '+';
+  }
+  state.history.push({fen, san: san + suffix, from: move.from, to: move.to});
+  state.historyIdx = state.history.length - 1;
+
+  state.selected = null;
+  state.legalMoves = [];
+
+  // Track novelty
+  const fenKey = fen.split(' ').slice(0,4).join(' ');
+  const isNew = !knownFens.has(fenKey);
+  if (isNew) {
+    knownFens.add(fenKey);
+    const arr = Array.from(knownFens).slice(-500);
+    localStorage.setItem('chess_library_known', JSON.stringify(arr));
+  }
+
+  render();
+  updateNovelty(isNew, state.historyIdx);
+}
+
+function undoMove() {
+  if (state.historyIdx <= 0) return;
+  state.historyIdx--;
+  restoreHistory(state.historyIdx);
+}
+
+function goToStart() {
+  state.historyIdx = 0;
+  restoreHistory(0);
+}
+
+function restoreHistory(idx) {
+  const {fen} = state.history[idx];
+  const parsed = parseFen(fen);
+  state.board = parsed.board;
+  state.turn = parsed.turn;
+  state.castling = parsed.castling;
+  state.enPassant = parsed.enPassant;
+  state.halfMove = parsed.halfMove;
+  state.fullMove = parsed.fullMove;
+  state.selected = null;
+  state.legalMoves = [];
+  if (idx > 0) {
+    state.lastFrom = state.history[idx].from;
+    state.lastTo = state.history[idx].to;
+  } else {
+    state.lastFrom = null;
+    state.lastTo = null;
+  }
+  render();
+  // Update status bar based on restored position
+  const legal = getLegalMoves(state.board, state.turn, state.castling, state.enPassant);
+  if (!legal.length) {
+    const inCheck = isInCheck(state.board, state.turn);
+    document.getElementById('status-bar').textContent = inCheck ? 'Checkmate.' : 'Stalemate.';
+  } else {
+    document.getElementById('status-bar').textContent =
+      idx >= 15 ? '✦ You are in uncharted space' :
+      idx >= 8  ? 'Deep in the tree — few humans have been here' :
+      'Exploring...';
+  }
+  document.getElementById('novelty-info').innerHTML = '';
+}
+
+function randomMove() {
+  const legal = getLegalMoves(state.board, state.turn, state.castling, state.enPassant);
+  if (!legal.length) return;
+  let move = legal[Math.floor(Math.random() * legal.length)];
+  if (move.special === 'promo') move = {...move, promoType: 'Q'};
+  makeMove(move);
+}
+
+function resetGame() {
+  loadFen(INIT_FEN);
+  document.getElementById('novelty-info').innerHTML = '';
+  document.getElementById('status-bar').textContent = 'Click a piece to begin exploring';
+}
+
+// ─── Presets ─────────────────────────────────────────────────────────────────
+
+const PRESETS = {
+  kings_indian: 'rnbqkb1r/ppppppbp/5np2/8/2PPP3/2N5/PP3PPP/R1BQKBNR b KQkq - 0 5',
+  sicilian:     'r1bqkbnr/pp2pppp/2np4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R w KQkq c6 0 4',
+  endgame:      '8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 0 1',
+  chaos:        'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1',
+};
+
+function loadPreset(name) {
+  loadFen(PRESETS[name]);
+  document.getElementById('novelty-info').innerHTML = '';
+}
+
+// ─── Rendering ───────────────────────────────────────────────────────────────
+
+function render() {
+  renderBoard();
+  renderEval();
+  renderMoveList();
+  renderFen();
+  renderDepthCounter();
+  renderMaterial();
+}
+
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  const legal = state.selected !== null
+    ? getLegalMoves(state.board, state.turn, state.castling, state.enPassant)
+        .filter(m => m.from[0]===state.selected[0] && m.from[1]===state.selected[1])
+    : [];
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = document.createElement('div');
+      sq.className = 'sq ' + ((r+c)%2===0 ? 'light' : 'dark');
+
+      if (state.lastFrom && state.lastFrom[0]===r && state.lastFrom[1]===c) sq.classList.add('last-move');
+      if (state.lastTo && state.lastTo[0]===r && state.lastTo[1]===c) sq.classList.add('last-move');
+      if (state.selected && state.selected[0]===r && state.selected[1]===c) sq.classList.add('selected');
+
+      const isPossible = legal.some(m => m.to[0]===r && m.to[1]===c);
+      if (isPossible) {
+        sq.classList.add('possible');
+        if (state.board[r][c]) sq.classList.add('has-piece');
+      }
+
+      const p = state.board[r][c];
+      if (p) sq.textContent = PIECES[p.color + p.type];
+
+      sq.addEventListener('click', () => handleClick(r, c));
+      boardEl.appendChild(sq);
+    }
+  }
+}
+
+let pendingPromoMove = null;
+
+function showPromoModal(move) {
+  pendingPromoMove = move;
+  const color = state.turn;
+  const pieces = color === 'w'
+    ? [{t:'Q',g:'♕'},{t:'R',g:'♖'},{t:'B',g:'♗'},{t:'N',g:'♘'}]
+    : [{t:'Q',g:'♛'},{t:'R',g:'♜'},{t:'B',g:'♝'},{t:'N',g:'♞'}];
+
+  const box = document.getElementById('promo-choices');
+  box.innerHTML = pieces.map(p =>
+    `<div class="promo-btn" onclick="resolvePromo('${p.t}')" title="${p.t}">${p.g}</div>`
+  ).join('');
+  document.getElementById('promo-overlay').classList.add('visible');
+}
+
+function resolvePromo(type) {
+  document.getElementById('promo-overlay').classList.remove('visible');
+  if (!pendingPromoMove) return;
+  const move = {...pendingPromoMove, promoType: type};
+  pendingPromoMove = null;
+  makeMove(move);
+}
+
+function handleClick(r, c) {
+  const p = state.board[r][c];
+
+  if (state.selected) {
+    const legal = getLegalMoves(state.board, state.turn, state.castling, state.enPassant)
+      .filter(m => m.from[0]===state.selected[0] && m.from[1]===state.selected[1]);
+    const move = legal.find(m => m.to[0]===r && m.to[1]===c);
+    if (move) {
+      if (move.special === 'promo') { showPromoModal(move); return; }
+      makeMove(move);
+      return;
+    }
+    if (p && p.color === state.turn) {
+      state.selected = [r, c];
+    } else {
+      state.selected = null;
+    }
+    state.legalMoves = [];
+    renderBoard();
+    return;
+  }
+
+  if (p && p.color === state.turn) {
+    state.selected = [r, c];
+    renderBoard();
+  }
+}
+
+function renderEval() {
+  const score = evaluate(state.board);
+  const clamped = Math.max(-10, Math.min(10, score));
+  const pct = ((clamped + 10) / 20 * 100).toFixed(1);
+  document.getElementById('eval-bar').style.width = pct + '%';
+  const txt = score > 0 ? '+' + score.toFixed(2) : score.toFixed(2);
+  document.getElementById('eval-text').textContent = txt;
+  let label = 'roughly equal';
+  if (Math.abs(score) > 6) label = score > 0 ? 'white is winning' : 'black is winning';
+  else if (Math.abs(score) > 3) label = score > 0 ? 'white is better' : 'black is better';
+  else if (Math.abs(score) > 1) label = score > 0 ? 'slight white edge' : 'slight black edge';
+  document.getElementById('eval-label').textContent = label;
+}
+
+function renderMoveList() {
+  const el = document.getElementById('move-list');
+  if (state.history.length <= 1) { el.textContent = 'Starting position'; return; }
+  let html = '';
+  let moveNum = 1;
+  for (let i = 1; i < state.history.length; i++) {
+    if (i % 2 === 1) html += `<span style="color:var(--muted)">${moveNum}.</span> `;
+    const isCurrent = i === state.historyIdx;
+    html += `<span class="${isCurrent ? 'current' : ''}" onclick="jumpTo(${i})">${state.history[i].san}</span> `;
+    if (i % 2 === 0) { html += ' '; moveNum++; }
+  }
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+function jumpTo(idx) {
+  state.historyIdx = idx;
+  restoreHistory(idx);
+}
+
+function renderFen() {
+  const fen = boardToFen(state.board, state.turn, state.castling, state.enPassant, state.halfMove, state.fullMove);
+  document.getElementById('fen-display').textContent = fen;
+}
+
+function renderDepthCounter() {
+  const depth = state.historyIdx;
+  const approxNovelty = depth >= 20 ? 'Almost certainly uncharted' :
+                        depth >= 10 ? 'Possibly uncharted' :
+                        depth >= 5  ? 'Still in theory' : 'Opening territory';
+  document.getElementById('depth-counter').textContent =
+    `depth ${depth} · move ${state.fullMove}`;
+  const tl = document.getElementById('territory-label');
+  if (tl) tl.textContent = approxNovelty;
+}
+
+function updateNovelty(isNew, depth) {
+  const el = document.getElementById('novelty-info');
+  if (isNew && depth >= 8) {
+    el.innerHTML = `<span class="novelty-badge">★ new territory</span> <span style="color:var(--muted);font-size:0.65rem;margin-left:4px;">first time here</span>`;
+  } else if (isNew) {
+    el.innerHTML = `<span class="known-badge">new to this session</span>`;
+  } else {
+    el.innerHTML = `<span class="known-badge">revisiting known territory</span>`;
+  }
+
+  // Status bar
+  const legal = getLegalMoves(state.board, state.turn, state.castling, state.enPassant);
+  if (!legal.length) {
+    const inCheck = isInCheck(state.board, state.turn);
+    document.getElementById('status-bar').textContent = inCheck ? 'Checkmate.' : 'Stalemate.';
+  } else {
+    document.getElementById('status-bar').textContent =
+      isNew && depth >= 15 ? '✦ You are in uncharted space' :
+      depth >= 8 ? 'Deep in the tree — few humans have been here' :
+      'Exploring...';
+  }
+}
+
+function copyFen() {
+  const fen = boardToFen(state.board, state.turn, state.castling, state.enPassant, state.halfMove, state.fullMove);
+  navigator.clipboard.writeText(fen).then(() => {
+    const el = document.getElementById('fen-display');
+    const orig = el.textContent;
+    el.textContent = 'Copied!';
+    setTimeout(() => el.textContent = orig, 1200);
+  });
+}
+
+// ─── Discoveries ─────────────────────────────────────────────────────────────
+
+function appendTag(tag) {
+  const el = document.getElementById('pin-note');
+  el.value += (el.value ? ' ' : '') + '#' + tag.replace(/ /g, '-');
+}
+
+function pinPosition() {
+  const name = document.getElementById('pin-name').value.trim();
+  const note = document.getElementById('pin-note').value.trim();
+  const fb = document.getElementById('pin-feedback');
+  if (!name) {
+    fb.style.color = '#c0392b';
+    fb.textContent = 'Give this position a name first.';
+    return;
+  }
+  const fen = boardToFen(state.board, state.turn, state.castling, state.enPassant, state.halfMove, state.fullMove);
+  const eval_ = evaluate(state.board).toFixed(2);
+  const depth = state.historyIdx;
+  discoveries.unshift({ name, note, fen, eval: eval_, depth, ts: Date.now() });
+  localStorage.setItem('chess_library_pins', JSON.stringify(discoveries));
+  document.getElementById('pin-name').value = '';
+  document.getElementById('pin-note').value = '';
+  fb.style.color = 'var(--teal)';
+  fb.textContent = `"${name}" pinned to your atlas.`;
+  setTimeout(() => fb.textContent = '', 2500);
+  renderDiscoveries();
+}
+
+function renderDiscoveries() {
+  const el = document.getElementById('discoveries-list');
+  document.getElementById('discovery-count').textContent = `(${discoveries.length} pin${discoveries.length!==1?'s':''})`;
+  if (!discoveries.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.65rem;font-style:italic;">No pins yet.</div>';
+    return;
+  }
+  el.innerHTML = discoveries.map((d, i) => `
+    <div class="discovery-item">
+      <div class="disc-name">${d.name}</div>
+      <div class="disc-meta">depth ${d.depth} · eval ${d.eval}</div>
+      ${d.note ? `<div class="disc-note">${d.note}</div>` : ''}
+      <span class="disc-load" onclick="loadDiscovery(${i})">→ visit position</span>
+    </div>
+  `).join('');
+}
+
+function loadDiscovery(i) {
+  loadFen(discoveries[i].fen);
+}
+
+// ─── Board Coordinates ───────────────────────────────────────────────────────
+
+function renderCoords() {
+  const files = document.getElementById('file-coords');
+  const ranks = document.getElementById('rank-coords');
+  'abcdefgh'.split('').forEach(f => {
+    const s = document.createElement('div');
+    s.className = 'coord';
+    s.textContent = f;
+    files.appendChild(s);
+  });
+  '87654321'.split('').forEach(r => {
+    const s = document.createElement('span');
+    s.textContent = r;
+    ranks.appendChild(s);
+  });
+}
+
+// ─── Material Counter ─────────────────────────────────────────────────────────
+
+const PIECE_DISPLAY = {
+  wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
+  bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟'
+};
+const PIECE_POINTS = {Q:9,R:5,B:3,N:3,P:1,K:0};
+
+function getMaterial(board) {
+  const counts = {w:{K:0,Q:0,R:0,B:0,N:0,P:0}, b:{K:0,Q:0,R:0,B:0,N:0,P:0}};
+  for (let r=0;r<8;r++) for (let c=0;c<8;c++) {
+    const p = board[r][c];
+    if (p) counts[p.color][p.type]++;
+  }
+  return counts;
+}
+
+function renderMaterial() {
+  const START = {K:1,Q:1,R:2,B:2,N:2,P:8};
+  const cur = getMaterial(state.board);
+  const capturedByWhite = {};
+  const capturedByBlack = {};
+  let whiteScore = 0, blackScore = 0;
+  for (const t of ['Q','R','B','N','P']) {
+    capturedByWhite[t] = Math.max(0, START[t] - cur.b[t]);
+    capturedByBlack[t] = Math.max(0, START[t] - cur.w[t]);
+    whiteScore += capturedByWhite[t] * PIECE_POINTS[t];
+    blackScore += capturedByBlack[t] * PIECE_POINTS[t];
+  }
+  const diff = whiteScore - blackScore;
+  const topPieces = ['Q','R','B','N','P'].flatMap(t => Array(capturedByBlack[t]).fill('w'+t)).map(k => PIECE_DISPLAY[k]).join('');
+  const botPieces = ['Q','R','B','N','P'].flatMap(t => Array(capturedByWhite[t]).fill('b'+t)).map(k => PIECE_DISPLAY[k]).join('');
+  const topAdv = diff < 0 ? `+${Math.abs(diff)}` : '';
+  const botAdv = diff > 0 ? `+${diff}` : '';
+  document.getElementById('material-top').innerHTML =
+    `<div class="material-side">${[...topPieces].map(p=>`<span class="cap-piece">${p}</span>`).join('')}</div>` +
+    `<div class="material-advantage">${topAdv}</div>`;
+  document.getElementById('material-bottom').innerHTML =
+    `<div class="material-side">${[...botPieces].map(p=>`<span class="cap-piece">${p}</span>`).join('')}</div>` +
+    `<div class="material-advantage">${botAdv}</div>`;
+}
+
+// ─── Facts ───────────────────────────────────────────────────────────────────
+
+const CHESS_FACTS = [
+  { text: "There are more possible chess games than atoms in the observable universe. Shannon estimated 10¹²⁰ — a number so large it has no physical analogue." },
+  { text: "The longest possible chess game is 5,949 moves. The shortest possible checkmate is 2 moves — the Fool's Mate." },
+  { text: "Chess was invented in India around the 6th century AD as 'Chaturanga', meaning four divisions of the military: infantry, cavalry, elephants, and chariots." },
+  { text: "If you made one move per second, it would take longer than the age of the universe to play every possible chess game." },
+  { text: "The word 'checkmate' comes from the Persian 'Shah Mat' — meaning 'the king is dead' or 'the king is helpless'." },
+  { text: "The number of possible first moves in chess is 20. After both players make one move each, there are 400 possible positions. After two moves each: 8,902." },
+  { text: "A computer called Deep Blue defeated world champion Garry Kasparov in 1997 — the first time a machine beat a reigning world champion under standard tournament conditions." },
+  { text: "Rule 110, a one-dimensional cellular automaton, is Turing complete. So is Conway's Game of Life. So is chess — someone built a working Turing machine inside it." },
+  { text: "The 'Immortal Game' of 1851 — Anderssen vs. Kieseritzky — is considered the most brilliant sacrifice combination in chess history. White gave up both rooks, a bishop, and his queen, then delivered checkmate." },
+  { text: "Magnus Carlsen became a grandmaster at 13 years, 148 days — the second youngest ever at the time. He reached an Elo of 2882, the highest ever recorded." },
+  { text: "The en passant rule was added in the 15th century when pawns gained the ability to move two squares. It prevented pawns from using the double step to skip past captures." },
+  { text: "Bobby Fischer could recall every move of every grandmaster game ever published. He said he had memorized roughly 3,000 games completely." },
+  { text: "The 50-move rule states that if no pawn moves or captures occur in 50 moves, either player can claim a draw. Some endgames require more than 50 moves to win — the record is 545 moves for a forced win with certain endgame configurations." },
+  { text: "There are 43,252,003,274,489,856,000 possible positions on a Rubik's cube. There are roughly 10⁴³ legal chess positions. Chess has about 10 billion trillion trillion trillion times more." },
+  { text: "Grandmaster Rashid Nezhmetdinov lost to Mikhail Tal 6 times, yet Tal said Nezhmetdinov's best games were 'beyond my understanding.' Some players produce art that outlives their results." },
+  { text: "The longest recorded chess game lasted 269 moves. It was Nikolic vs. Arsovic, 1989, and it ended in a draw." },
+  { text: "Anatoly Karpov and Garry Kasparov played five World Championship matches between 1984 and 1990 — 144 games total. The rivalry defined an era." },
+  { text: "The knight is the only piece that can jump over other pieces. In old Indian chess it moved like a 'horse' and was considered the hardest piece to master." },
+  { text: "Every position you reach past move 15 in this explorer has likely never been reached by a human being. You are an explorer. The map is yours to make." },
+];
+
+let currentFactIdx = 0;
+
+function showFact(idx) {
+  const el = document.getElementById('fact-text');
+  if (!el) return;
+  el.classList.add('fading');
+  setTimeout(() => {
+    el.textContent = CHESS_FACTS[idx].text;
+    el.classList.remove('fading');
+  }, 400);
+}
+
+function nextFact() {
+  currentFactIdx = (currentFactIdx + 1) % CHESS_FACTS.length;
+  showFact(currentFactIdx);
+}
+
+function shuffleFacts() {
+  for (let i = CHESS_FACTS.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [CHESS_FACTS[i], CHESS_FACTS[j]] = [CHESS_FACTS[j], CHESS_FACTS[i]];
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+renderCoords();
+renderDiscoveries();
+loadFen(INIT_FEN);
+shuffleFacts();
+showFact(0);
+setInterval(nextFact, 9000);
+
+// ─── Help overlay ─────────────────────────────────────────────────────────────
+
+function openHelp() {
+  document.getElementById('help-overlay').classList.add('visible');
+}
+function closeHelp(e) {
+  if (e.target === document.getElementById('help-overlay'))
+    document.getElementById('help-overlay').classList.remove('visible');
+}
+function closeHelpBtn() {
+  document.getElementById('help-overlay').classList.remove('visible');
+}
+
+// ─── Facts overlay ────────────────────────────────────────────────────────────
+
+function openFacts() {
+  const list = document.getElementById('facts-list');
+  list.innerHTML = CHESS_FACTS.map((f, i) => `
+    <div class="fact-card">
+      <div class="fact-num">Fact ${i + 1}</div>
+      <p>${f.text}</p>
+    </div>
+  `).join('');
+  document.getElementById('facts-overlay').classList.add('visible');
+}
+function closeFactsOverlay(e) {
+  if (e.target === document.getElementById('facts-overlay'))
+    document.getElementById('facts-overlay').classList.remove('visible');
+}
+function closeFactsBtn() {
+  document.getElementById('facts-overlay').classList.remove('visible');
+}
+
+// ─── FEN Import ───────────────────────────────────────────────────────────────
+
+function importFen() {
+  const raw = document.getElementById('fen-import').value.trim();
+  const errEl = document.getElementById('fen-err');
+  if (!raw) { errEl.textContent = 'Paste a FEN string first.'; return; }
+  try {
+    const parsed = parseFen(raw);
+    // Basic validation
+    if (parsed.board.length !== 8 || parsed.board.some(r => r.length !== 8))
+      throw new Error('Invalid board');
+    let wk=0,bk=0;
+    for (let r=0;r<8;r++) for (let c=0;c<8;c++) {
+      if (parsed.board[r][c]?.type==='K' && parsed.board[r][c]?.color==='w') wk++;
+      if (parsed.board[r][c]?.type==='K' && parsed.board[r][c]?.color==='b') bk++;
+    }
+    if (wk!==1||bk!==1) throw new Error('Position must have exactly one king per side');
+    errEl.textContent = '';
+    document.getElementById('fen-import').value = '';
+    document.getElementById('novelty-info').innerHTML = '';
+    loadFen(raw);
+  } catch(e) {
+    errEl.textContent = 'Invalid FEN: ' + e.message;
+  }
+}
+
+// Allow pressing Enter in the FEN import field
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fen-import')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') importFen();
+  });
+});
+
+// ─── Computer Opponent (minimax depth 3) ─────────────────────────────────────
+
+let computerOn = false;
+let computerThinking = false;
+
+function toggleComputer() {
+  computerOn = !computerOn;
+  const toggle = document.getElementById('computer-toggle');
+  const label = document.getElementById('computer-label');
+  toggle.classList.toggle('on', computerOn);
+  label.textContent = computerOn ? 'Computer is ON (Black)' : 'Play vs computer';
+  if (!computerOn) {
+    document.getElementById('thinking-indicator').textContent = '';
+  }
+  if (computerOn && state.turn === 'b' && !computerThinking) {
+    scheduleComputerMove();
+  }
+}
+
+function scheduleComputerMove() {
+  if (!computerOn || state.turn !== 'b' || computerThinking) return;
+  const legal = getLegalMoves(state.board, 'b', state.castling, state.enPassant);
+  if (!legal.length) return;
+  computerThinking = true;
+  document.getElementById('thinking-indicator').innerHTML = '<span class="thinking">Thinking…</span>';
+  setTimeout(() => {
+    const move = getBestMove(state.board, state.castling, state.enPassant, 3, 'b');
+    computerThinking = false;
+    document.getElementById('thinking-indicator').textContent = '';
+    if (move) {
+      if (move.special === 'promo') move.promoType = 'Q';
+      makeMove(move);
+    }
+  }, 120);
+}
+
+// Minimax with alpha-beta pruning
+function getBestMove(board, castling, enPassant, depth, color) {
+  const legal = getLegalMoves(board, color, castling, enPassant);
+  if (!legal.length) return null;
+  let bestMove = null;
+  let bestScore = color === 'b' ? Infinity : -Infinity;
+
+  for (const m of legal) {
+    if (m.special === 'promo') m.promoType = 'Q';
+    const {board: nb, castling: nc, enPassant: nep} = applyMove(board, m, castling, enPassant);
+    const score = minimax(nb, nc, nep, depth - 1, color === 'b' ? 'w' : 'b', -Infinity, Infinity);
+    if (color === 'b' ? score < bestScore : score > bestScore) {
+      bestScore = score;
+      bestMove = m;
+    }
+  }
+  return bestMove;
+}
+
+function minimax(board, castling, enPassant, depth, color, alpha, beta) {
+  if (depth === 0) return evaluate(board);
+  const legal = getLegalMoves(board, color, castling, enPassant);
+  if (!legal.length) {
+    if (isInCheck(board, color)) return color === 'w' ? -9999 : 9999;
+    return 0; // stalemate
+  }
+  if (color === 'w') {
+    let maxScore = -Infinity;
+    for (const m of legal) {
+      if (m.special === 'promo') m.promoType = 'Q';
+      const {board: nb, castling: nc, enPassant: nep} = applyMove(board, m, castling, enPassant);
+      const score = minimax(nb, nc, nep, depth - 1, 'b', alpha, beta);
+      maxScore = Math.max(maxScore, score);
+      alpha = Math.max(alpha, score);
+      if (beta <= alpha) break;
+    }
+    return maxScore;
+  } else {
+    let minScore = Infinity;
+    for (const m of legal) {
+      if (m.special === 'promo') m.promoType = 'Q';
+      const {board: nb, castling: nc, enPassant: nep} = applyMove(board, m, castling, enPassant);
+      const score = minimax(nb, nc, nep, depth - 1, 'w', alpha, beta);
+      minScore = Math.min(minScore, score);
+      beta = Math.min(beta, score);
+      if (beta <= alpha) break;
+    }
+    return minScore;
+  }
+}
+
+// Hook into makeMove to trigger computer response after white moves
+const _origMakeMove = makeMove;
+makeMove = function(move) {
+  _origMakeMove(move);
+  if (computerOn && state.turn === 'b' && !computerThinking) {
+    scheduleComputerMove();
+  }
+};
+</script>
+</body>
+</html>
