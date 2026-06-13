@@ -877,17 +877,96 @@
   }
 
   @media (max-width: 900px) {
-    .main { flex-wrap: wrap; padding: 8px 12px 24px; }
+    .main {
+      flex-wrap: wrap;
+      padding: 8px 12px 24px;
+      justify-content: center;
+    }
     #board { width: min(90vw, 480px); height: min(90vw, 480px); }
     .coord-row { width: min(90vw, 480px); }
     .coord-col { height: min(90vw, 480px); }
+    .material-bar { width: min(90vw, 480px); }
     .side-panel { width: 100%; max-width: 580px; grid-template-columns: 1fr 1fr; }
   }
 
-  @media (max-width: 520px) {
-    .side-panel { grid-template-columns: 1fr; }
+  @media (max-width: 600px) {
+    /* Navbar */
+    nav { padding: 0 14px; gap: 8px; height: auto; min-height: 52px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+    .nav-brand { font-size: 0.95rem; }
+    .nav-links { gap: 3px; flex-wrap: wrap; }
+    .nav-btn { font-size: 0.72rem; padding: 5px 9px; }
+
+    /* Fact bar */
+    .fact-bar { padding: 8px 14px; gap: 8px; }
+    .fact-label { font-size: 0.65rem; }
+    .fact-text { font-size: 0.88rem; }
+
+    /* Header */
+    header { padding: 14px 14px 6px; }
+    header h1 { font-size: 1.4rem; }
+    header p { font-size: 0.88rem; }
+    .counter { font-size: 0.75rem; }
+
+    /* Board */
+    #board { width: min(94vw, 420px); height: min(94vw, 420px); }
+    .coord-row { width: min(94vw, 420px); }
+    .coord-col { height: min(94vw, 420px); }
+    .material-bar { width: min(94vw, 420px); }
+    .sq { font-size: clamp(1.2rem, 10vw, 2.2rem); }
+
+    /* Side panel: single column */
+    .side-panel { grid-template-columns: 1fr; width: 100%; max-width: 500px; }
     .card.full { grid-column: 1; }
-    header { padding: 16px 12px 6px; }
+    .card { padding: 12px; }
+    .card h3 { font-size: 0.68rem; margin-bottom: 8px; padding-bottom: 6px; }
+
+    /* Buttons */
+    button { font-size: 0.75rem; padding: 7px 11px; }
+    .btn-row { gap: 5px; }
+
+    /* Eval */
+    #eval-text { font-size: 1.2rem; }
+    #eval-label { font-size: 0.75rem; }
+
+    /* Move list */
+    #move-list { font-size: 0.78rem; max-height: 110px; }
+
+    /* Forms */
+    .pin-form input, .pin-form textarea { font-size: 0.78rem; }
+    .tag { font-size: 0.68rem; padding: 4px 9px; }
+
+    /* FEN */
+    #fen-display { font-size: 0.62rem; }
+    .fen-import-row input { font-size: 0.62rem; }
+
+    /* Discovery */
+    .discovery-item { font-size: 0.75rem; }
+    .discoveries { max-height: 160px; }
+
+    /* Overlays */
+    #help-box, #facts-box { padding: 20px 16px; border-radius: 12px; }
+    #help-box h2, #facts-box h2 { font-size: 1.25rem; }
+    .help-row { font-size: 0.8rem; }
+    .fact-card p { font-size: 0.88rem; }
+
+    /* Promo picker */
+    .promo-btn { width: 52px; height: 52px; font-size: 2.2rem; }
+
+    /* Status */
+    .status-bar { font-size: 0.75rem; }
+
+    /* Footer */
+    footer { font-size: 0.88rem; padding: 16px 14px; }
+  }
+
+  @media (max-width: 380px) {
+    #board { width: 96vw; height: 96vw; }
+    .coord-row { width: 96vw; }
+    .coord-col { height: 96vw; }
+    .material-bar { width: 96vw; }
+    nav { height: auto; }
+    .nav-links { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+    .nav-btn { text-align: center; }
   }
 </style>
 </head>
