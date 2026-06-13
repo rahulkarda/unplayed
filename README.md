@@ -6,7 +6,7 @@ There are more possible chess games than atoms in the observable universe. Human
 
 *Unplayed* is a browser-based chess explorer that lets you navigate this space — play freely, dive deep, and drop pins on positions worth remembering.
 
-🔗 **[Play it live →](https://unplayed.netlify.app)**
+🔗 **[Play it live → unplayed.netlify.app](https://imaginative-biscotti-752260.netlify.app)**
 
 ---
 
